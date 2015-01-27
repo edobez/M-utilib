@@ -9,9 +9,13 @@ function files = SaveFigs(varargin)
 %   SAVEFIGS(DIR) saves  all the opened figures into the folder specified 
 %   in DIR as relative path in PNG format.
 %
-%   SAVEFIGS(DIR,FORMAT) saves  all the opened figures into the folder specified 
-%   in DIR as relative path. The format is specified by the second argument
-%   and can be choosen between: PNG, FIG, JPEG.
+%   SAVEFIGS(DIR,options) saves  all the opened figures into the folder 
+%   specified in DIR as relative path with options specified as Param/Value
+%   pairs.
+%   Options:
+%   - 'format'  export format, between PNG (default), JPG, FIG 
+%   - 'style'   name of the custom export style, created in
+%       Figure:File->Export Setup
 %   
 %   Notes: If the default or specified folder is not present, it will be
 %   created. In case a file with the same name is present in the folder,
@@ -41,11 +45,13 @@ assert(~isempty(figures),'No open figures!');
 p = inputParser;
 defaultDir = 'fig';
 defaultFormat = 'png';
-expectedFormats = {'png','fig','jpg'} ;%TODO: add more formats
+expectedFormats = {'png','fig','jpg'};%TODO: add more formats
+defaultStyle = '';
 
 addOptional(p,'dir',defaultDir,@isstr);
-addOptional(p,'format',defaultFormat,...
+addParameter(p,'format',defaultFormat,...
     @(x) any(validatestring(x,expectedFormats)));
+addParameter(p,'style',defaultStyle,@isstr);
 
 parse(p,varargin{:});
 
@@ -62,11 +68,16 @@ for i=1:length(figures);
     % File name creation
     filepath = createFilename(figures(i),figdir);
     
+    % Changing style (if needed)
+    if (~isempty(p.Results.style))
+        style = hgexport('readstyle',p.Results.style);
+        hgexport(figures(i),'temp_dummy',style,'applystyle', true);
+    end
+    
     % Saving file
     switch p.Results.format
     case 'png'
         filepath = checkFilename([filepath '.png']);
-        % TODO: add style selection
         print(figures(i),'-dpng',filepath);
     case 'fig'
         filepath = checkFilename([filepath '.fig']);
@@ -75,11 +86,20 @@ for i=1:length(figures);
         filepath = checkFilename([filepath '.jpg']);
         print(figures(i),'-djpeg',filepath);
     end
+    
+    % Reverting to factory style (only if a style was indicated)
+    if (~isempty(p.Results.style))
+        style = hgexport('factorystyle');
+        hgexport(figures(i),'temp_dummy',style,'applystyle', true);
+    end
+    
+    % Returning paths
     files{i} = filepath;
 end
 
 end
 
+% TODO: this functions must return just the name, without the directory
 function [filepath] = createFilename(fig,figdir)
     isnamevalid = @(x) isempty(regexp(x, '[/\*:?"<>|]', 'once'));
     
@@ -101,7 +121,7 @@ end
 function [filepath] = checkFilename(filepath,varargin)
 
     [dir,name,ext] = fileparts(filepath);
-    filejoin = @(dir,name,ext) [dir filesep name ext];
+    filejoin = @(dir,name,ext) [dir filesep name ext]; % TODO: use fullfile function
     
     if (nargin == 2)
         rec = varargin{1};
