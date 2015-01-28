@@ -1,4 +1,4 @@
-function files = SaveFigs(varargin)
+function files = saveFigs(varargin)
 %SAVEFIGS Save open figures to files.
 %   SAVEFIGS() saves all the opened figures into the folder ".\fig" in PNG
 %   format.
@@ -12,8 +12,11 @@ function files = SaveFigs(varargin)
 %   SAVEFIGS(DIR,options) saves  all the opened figures into the folder 
 %   specified in DIR as relative path with options specified as Param/Value
 %   pairs.
+%
 %   Options:
 %   - 'format'  export format, between PNG (default), JPG, FIG, PDF.
+%   - 'handle'  array or single handle to figures to save. Without this
+%   argument, all the open figures are saved.
 %   - 'style'   name of the custom export style, created in
 %       Figure:File->Export Setup.
 %   - 'name'    name given to the file if figure.Name property is not present or
@@ -39,11 +42,6 @@ function files = SaveFigs(varargin)
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-% Get the graphic root handler and check if there are figures open
-root = groot;
-figures = root.Children;
-assert(~isempty(figures),'No open figures.');
-
 % Initialize the input argument parser
 p = inputParser;
 defaultDir = 'img';
@@ -52,15 +50,27 @@ expectedFormats = {'png','fig','jpg','pdf'};%TODO: add more formats
 defaultStyle = '';
 defaultFigureName = 'fig';
 defaultPdfDpi = 150;
+defaultHandle = '';
 
 addOptional(p,'dir',defaultDir,@isstr);
 addParameter(p,'format',defaultFormat,...
     @(x) any(validatestring(x,expectedFormats)));
+addParameter(p,'handle',defaultHandle,...
+    @(x) any(ishandle(f)));
 addParameter(p,'style',defaultStyle,@isstr);
 addParameter(p,'name',defaultFigureName,@isstr);
 addParameter(p,'dpi',defaultPdfDpi,@isnumeric);
 
 parse(p,varargin{:});
+
+% Check for open figures
+if(~isempty(p.Results.handle))
+    figures = p.Results.handle;
+else
+    root = groot;
+    figures = root.Children;
+end
+assert(~isempty(figures),'No open figures.');
 
 figdir = p.Results.dir;
 if(isdir(figdir))

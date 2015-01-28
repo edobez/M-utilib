@@ -16,7 +16,7 @@ savedir = 'myfigures';
 
 % I can just save the figures with their numbers, so that the created name
 % would be "fig2", "fig3"...
-SaveFigs(savedir);
+saveFigs(savedir);
 
 % or I can specify the name of the figures
 f2 = figure(2);
@@ -24,10 +24,11 @@ f2.Name = 'Sine plot';
 f3 = figure(3);
 f3.Name = 'Tan plot';
 
-SaveFigs(savedir);
+saveFigs(savedir);
 
-% I can choose the format of the output files as a Param/Value option
-SaveFigs(savedir,'format','fig');
+% I can choose the format of the output files as a Param/Value option, and
+% also one particular figure to save
+saveFigs(savedir,'format','pdf','handle',f3);
 
 return;
 %% Shortcut
@@ -37,7 +38,7 @@ return;
 % If the variable is not present, it saves them into the default folder .\fig.
 disp('Saving open figures...');
 if(exist('figdir','var') == 1)
-    SaveFigs(figdir);
+    saveFigs(figdir);
 else
-    SaveFigs();
+    saveFigs();
 end
