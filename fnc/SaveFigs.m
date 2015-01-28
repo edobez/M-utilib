@@ -13,11 +13,12 @@ function files = SaveFigs(varargin)
 %   specified in DIR as relative path with options specified as Param/Value
 %   pairs.
 %   Options:
-%   - 'format'  export format, between PNG (default), JPG, FIG 
+%   - 'format'  export format, between PNG (default), JPG, FIG, PDF.
 %   - 'style'   name of the custom export style, created in
-%       Figure:File->Export Setup
+%       Figure:File->Export Setup.
 %   - 'name'    name given to the file if figure.Name property is not present or
-%   invalid
+%   invalid. Default is 'fig'.
+%   - 'dpi'     figure resolution in dots per inch (DPI). Default is 150
 %   
 %   Notes: If the default or specified folder is not present, it will be
 %   created. In case a file with the same name is present in the folder,
@@ -47,15 +48,17 @@ assert(~isempty(figures),'No open figures.');
 p = inputParser;
 defaultDir = 'img';
 defaultFormat = 'png';
-expectedFormats = {'png','fig','jpg'};%TODO: add more formats
+expectedFormats = {'png','fig','jpg','pdf'};%TODO: add more formats
 defaultStyle = '';
 defaultFigureName = 'fig';
+defaultPdfDpi = 150;
 
 addOptional(p,'dir',defaultDir,@isstr);
 addParameter(p,'format',defaultFormat,...
     @(x) any(validatestring(x,expectedFormats)));
 addParameter(p,'style',defaultStyle,@isstr);
 addParameter(p,'name',defaultFigureName,@isstr);
+addParameter(p,'dpi',defaultPdfDpi,@isnumeric);
 
 parse(p,varargin{:});
 
@@ -90,13 +93,16 @@ for i=1:length(figures);
     switch p.Results.format
     case 'png'
         filepath = checkFilename([filepath '.png']);
-        print(figures(i),'-dpng',filepath);
+        print(fig,'-dpng',filepath);
     case 'fig'
         filepath = checkFilename([filepath '.fig']);
-        savefig(figures(i),filepath);
+        savefig(fig,filepath);
     case 'jpg'
         filepath = checkFilename([filepath '.jpg']);
-        print(figures(i),'-djpeg',filepath);
+        print(fig,'-djpeg',filepath);
+    case 'pdf'
+        filepath = checkFilename([filepath '.pdf']);
+        printPdf(fig,filepath,p.Results.dpi);
     end
     
     % Reverting to factory style (only if a style was indicated)
@@ -138,4 +144,33 @@ function [filepath] = checkFilename(filepath,varargin)
         end
     end
     
+end
+
+% The code below mostly belongs to Gabe Hoffmann [gabe.hoffmann@gmail.com],
+% which has written the function "save2pdf", originally available at 
+% http://www.mathworks.com/matlabcentral/fileexchange/16179-save2pdf
+function printPdf(fig,filepath,dpi)
+    % Backup previous settings
+    settings = {'PaperType','PaperUnits','Units',...
+        'PaperPosition','PaperSize','PaperOrientation'};
+    preSettings = get(fig,settings);
+    
+    % Make changing paper type possible
+    set(fig,'PaperType','<custom>');
+    set(fig,'PaperOrientation','landscape');
+    
+    % Set units to all be the same
+    set(fig,'PaperUnits','inches');
+    set(fig,'Units','inches');
+
+    % Set the page size and position to match the figure's dimensions
+    position = get(fig,'Position');
+    set(fig,'PaperPosition',[0,0,position(3:4)]);
+    set(fig,'PaperSize',position(3:4));
+    
+    % Save the pdf (this is the same method used by "saveas")
+    print(fig,'-dpdf',filepath,sprintf('-r%d',dpi))
+    
+    % Restore the previous settings
+    set(fig,settings,preSettings);
 end
