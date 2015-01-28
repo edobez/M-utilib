@@ -16,6 +16,8 @@ function files = SaveFigs(varargin)
 %   - 'format'  export format, between PNG (default), JPG, FIG 
 %   - 'style'   name of the custom export style, created in
 %       Figure:File->Export Setup
+%   - 'name'    name given to the file if figure.Name property is not present or
+%   invalid
 %   
 %   Notes: If the default or specified folder is not present, it will be
 %   created. In case a file with the same name is present in the folder,
@@ -39,19 +41,21 @@ function files = SaveFigs(varargin)
 % Get the graphic root handler and check if there are figures open
 root = groot;
 figures = root.Children;
-assert(~isempty(figures),'No open figures!');
+assert(~isempty(figures),'No open figures.');
 
 % Initialize the input argument parser
 p = inputParser;
-defaultDir = 'fig';
+defaultDir = 'img';
 defaultFormat = 'png';
 expectedFormats = {'png','fig','jpg'};%TODO: add more formats
 defaultStyle = '';
+defaultFigureName = 'fig';
 
 addOptional(p,'dir',defaultDir,@isstr);
 addParameter(p,'format',defaultFormat,...
     @(x) any(validatestring(x,expectedFormats)));
 addParameter(p,'style',defaultStyle,@isstr);
+addParameter(p,'name',defaultFigureName,@isstr);
 
 parse(p,varargin{:});
 
@@ -63,10 +67,18 @@ else
     disp(['Created folder ' figdir]);
 end
 
-
+isnamevalid = @(x) isempty(regexp(x, '[/\*:?"<>|]', 'once'));
 for i=1:length(figures);
+    fig = figures(i);
+    
     % File name creation
-    filepath = createFilename(figures(i),figdir);
+    figname = fig.Name;
+    if(~isnamevalid(figname) || isempty(figname) || length(figname) > 60)
+        figname = [p.Results.name num2str(fig.Number)];
+        warning('Figure (%d) has empty or invalid name for file creation. Using its number instead.',...
+            fig.Number);
+    end
+    filepath = fullfile('.',figdir,figname);  
     
     % Changing style (if needed)
     if (~isempty(p.Results.style))
@@ -99,48 +111,30 @@ end
 
 end
 
-% TODO: this functions must return just the name, without the directory
-function [filepath] = createFilename(fig,figdir)
-    isnamevalid = @(x) isempty(regexp(x, '[/\*:?"<>|]', 'once'));
-    
-    figname = fig.Name;
-    fignum = fig.Number;
-    filepath = ['.' filesep figdir filesep];
-    
-    % TODO: add optional param for setting default name of fig
-    if(~isnamevalid(figname) || isempty(figname))
-        figname = ['fig' num2str(fignum)];
-        warning('Figure (%d) has empty or invalid name for file creation. Using its number instead.',...
-            fignum);
-    end
-    filepath = [filepath figname];    
-end
-
 % Recursive function needed for checking if there is another file with the
 % same name. In that case it will add a number at the end.
 function [filepath] = checkFilename(filepath,varargin)
 
-    [dir,name,ext] = fileparts(filepath);
-    filejoin = @(dir,name,ext) [dir filesep name ext]; % TODO: use fullfile function
+    [dir,filename,ext] = fileparts(filepath);
     
     if (nargin == 2)
         rec = varargin{1};
         
-        k = strfind(name,'-');
-        namesplit = name(1:k(end)-1);
+        k = strfind(filename,'-');
+        figname = filename(1:k(end)-1);
     else 
         rec = 1;
-        namesplit = name;
+        figname = filename;
     end
     
-    filepath = filejoin(dir,name,ext);
+    filepath = [fullfile(dir,filename) ext];
     if(exist(filepath,'file') == 2)
-        name = [namesplit '-' num2str(rec)];
-        filepath = checkFilename(filejoin(dir,name,ext),rec+1);
+        filename = [figname '-' num2str(rec)];
+        filepath = checkFilename([fullfile(dir,filename) ext],rec+1);
         
         if(rec == 1) 
             warning('File with same (%s) name present in the chosen directory. Using unique name.',...
-        [namesplit ext]);
+        [figname ext]);
         end
     end
     

@@ -26,9 +26,8 @@ f3.Name = 'Tan plot';
 
 SaveFigs(savedir);
 
-% I can choose the format of the output files as the second argument of the
-% function
-SaveFigs(savedir,'fig');
+% I can choose the format of the output files as a Param/Value option
+SaveFigs(savedir,'format','fig');
 
 return;
 %% Shortcut
@@ -42,5 +41,3 @@ if(exist('figdir','var') == 1)
 else
     SaveFigs();
 end
-
-return;
