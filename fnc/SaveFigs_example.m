@@ -29,16 +29,3 @@ saveFigs(savedir);
 % I can choose the format of the output files as a Param/Value option, and
 % also one particular figure to save
 saveFigs(savedir,'format','pdf','handle',f3);
-
-return;
-%% Shortcut
-% I find very useful to use this function as a toolbar shortcut. By using
-% the provided code for the shortcut, it saves all the opened figures in
-% the folder specified in the variable "figdir". 
-% If the variable is not present, it saves them into the default folder .\fig.
-disp('Saving open figures...');
-if(exist('figdir','var') == 1)
-    saveFigs(figdir);
-else
-    saveFigs();
-end

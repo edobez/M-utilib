@@ -56,7 +56,7 @@ addOptional(p,'dir',defaultDir,@isstr);
 addParameter(p,'format',defaultFormat,...
     @(x) any(validatestring(x,expectedFormats)));
 addParameter(p,'handle',defaultHandle,...
-    @(x) any(ishandle(f)));
+    @(x) any(ishandle(x)));
 addParameter(p,'style',defaultStyle,@isstr);
 addParameter(p,'name',defaultFigureName,@isstr);
 addParameter(p,'dpi',defaultPdfDpi,@isnumeric);
