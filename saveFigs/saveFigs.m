@@ -1,6 +1,6 @@
 function files = saveFigs(varargin)
 %SAVEFIGS Save open figures to files.
-%   SAVEFIGS() saves all the opened figures into the folder ".\fig" in PNG
+%   SAVEFIGS() saves all the opened figures into the folder ".\img" in PNG
 %   format.
 %
 %   F = SAVEFIGS() returns a cell array containing the list of the created
@@ -62,8 +62,12 @@ end
 assert(~isempty(figures),'No open figures.');
 
 figdir = p.Results.dir;
-if(isdir(figdir))
-    disp('Folder already present, saving there');
+if( exist(figdir,'dir') == 7)
+    if strcmp(figdir,defaultDir)
+        disp(['Saving in default folder: ' defaultDir]);
+    else
+        disp('Folder already present, saving there');
+    end
 else
     mkdir(figdir);
     disp(['Created folder ' figdir]);
@@ -80,7 +84,7 @@ for i=1:length(figures);
         warning('Figure (%d) has empty or invalid name for file creation. Using its number instead.',...
             fig.Number);
     end
-    filepath = fullfile('.',figdir,figname);  
+    filepath = fullfile(figdir,figname);  
     
     % Changing style (if needed)
     if (~isempty(p.Results.style))
